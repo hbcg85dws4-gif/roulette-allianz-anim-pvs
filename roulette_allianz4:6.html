@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Roulette Allianz</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&display=swap');
+
+  :root {
+    --blue:       #003781;
+    --blue-light: #004a93;
+    --blue-mid:   #002a62;
+    --white:      #ffffff;
+    --grey:       #414141;
+    --grey-light: #f2f4f7;
+    --accent:     #0066cc;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--grey-light);
+    font-family: 'Source Sans 3', sans-serif;
+    color: var(--grey);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse at 50% 0%, rgba(0,55,129,0.08) 0%, transparent 60%);
+    pointer-events: none;
+  }
+
+  /* ── Header ── */
+  .header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 2rem;
+  }
+
+  /* Allianz logo mark (SVG inline) */
+  .logo-mark {
+    width: 52px;
+    margin-bottom: 0.6rem;
+  }
+
+  h1 {
+    font-size: clamp(1.5rem, 5vw, 2.2rem);
+    font-weight: 700;
+    color: var(--blue);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    margin-bottom: 0.2em;
+  }
+
+  .sub {
+    font-size: 0.78rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #8a96a8;
+  }
+
+  /* ── Wheel ── */
+  .wheel-wrap {
+    position: relative;
+    width: min(310px, 86vw);
+    height: min(310px, 86vw);
+    margin-bottom: 0.8rem;
+  }
+
+  .pointer {
+    position: absolute;
+    top: -13px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0; height: 0;
+    border-left: 11px solid transparent;
+    border-right: 11px solid transparent;
+    border-top: 22px solid var(--blue);
+    filter: drop-shadow(0 2px 4px rgba(0,55,129,0.4));
+    z-index: 10;
+  }
+
+  #wheel-svg {
+    width: 100%;
+    height: 100%;
+    transform-origin: center center;
+    will-change: transform;
+    filter: drop-shadow(0 4px 24px rgba(0,55,129,0.2));
+  }
+
+  .hub {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 44px; height: 44px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 38% 32%, #ffffff, var(--blue-light) 60%, var(--blue-mid));
+    border: 2px solid rgba(255,255,255,0.6);
+    cursor: pointer;
+    box-shadow: 0 2px 12px rgba(0,55,129,0.4);
+    z-index: 5;
+    transition: transform 0.12s;
+  }
+  .hub:hover  { transform: translate(-50%,-50%) scale(1.1); }
+  .hub:active { transform: translate(-50%,-50%) scale(0.93); }
+
+  /* ── Button ── */
+  .spin-btn {
+    font-family: 'Source Sans 3', sans-serif;
+    font-weight: 700;
+    font-size: 1rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    background: var(--blue);
+    color: var(--white);
+    border: none;
+    padding: 0.85em 3em;
+    border-radius: 3px;
+    cursor: pointer;
+    box-shadow: 0 4px 16px rgba(0,55,129,0.3);
+    transition: background 0.15s, transform 0.12s, box-shadow 0.12s;
+    margin-top: 1rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .spin-btn::after {
+    content: '';
+    position: absolute;
+    top: 0; left: -80%;
+    width: 50%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+    transition: left 0.45s;
+  }
+  .spin-btn:hover::after { left: 140%; }
+  .spin-btn:hover  { background: var(--blue-light); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,55,129,0.35); }
+  .spin-btn:active { transform: translateY(1px); }
+  .spin-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+  /* ── Result ── */
+  .result {
+    margin-top: 1.4rem;
+    min-height: 2.4rem;
+    font-size: 1rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+    opacity: 0;
+    transform: translateY(8px);
+    transition: opacity 0.4s, transform 0.4s;
+    background: var(--white);
+    padding: 0.6em 1.4em;
+    border-radius: 3px;
+    box-shadow: 0 2px 10px rgba(0,55,129,0.1);
+    border-left: 4px solid transparent;
+  }
+  .result.show  { opacity: 1; transform: translateY(0); }
+  .result.win   { border-left-color: #1a7f3c; color: #1a7f3c; }
+  .result.lose  { border-left-color: var(--grey); color: var(--grey); }
+  .result .ico  { font-size: 1.4rem; }
+
+  /* ── Tally ── */
+  .tally {
+    margin-top: 1.2rem;
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #aab0bc;
+  }
+  .tally b { color: var(--blue); font-weight: 700; }
+
+  /* ── Divider ── */
+  .divider {
+    width: 40px;
+    height: 3px;
+    background: var(--blue);
+    border-radius: 2px;
+    margin: 0.5rem 0 0;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <!-- Allianz eagle logo mark (simplified SVG) -->
+  <svg class="logo-mark" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="30" cy="30" r="30" fill="#003781"/>
+    <!-- Three bars motif inspired by Allianz icon -->
+    <rect x="16" y="18" width="7" height="22" rx="3.5" fill="white"/>
+    <rect x="26.5" y="14" width="7" height="26" rx="3.5" fill="white"/>
+    <rect x="37" y="18" width="7" height="22" rx="3.5" fill="white"/>
+  </svg>
+  <h1>Roulette</h1>
+  <div class="divider"></div>
+  <p class="sub" style="margin-top:0.5rem">4 chances sur 6</p>
+</div>
+
+<div class="wheel-wrap">
+  <div class="pointer"></div>
+  <svg id="wheel-svg" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"></svg>
+  <button class="hub" id="hub" aria-label="Tourner"></button>
+</div>
+
+<button class="spin-btn" id="spinBtn">Tourner</button>
+
+<div class="result" id="result">
+  <span class="ico" id="ico"></span>
+  <span class="msg" id="msg"></span>
+</div>
+
+<p class="tally">Victoires&nbsp;: <b id="wins">0</b>&nbsp;&nbsp;|&nbsp;&nbsp;Défaites&nbsp;: <b id="losses">0</b></p>
+
+<script>
+// Palette Allianz : bleu foncé, bleu moyen, bleu clair alternés avec blanc
+const SEGS = [
+  { label:'GAGNÉ', win:true,  fill:'#003781', textFill:'#ffffff', stroke:'#ffffff' },
+  { label:'GAGNÉ', win:true,  fill:'#d6dde8', textFill:'#003781', stroke:'#003781' },
+  { label:'PERDU', win:false, fill:'#003781', textFill:'#ffffff', stroke:'#ffffff' },
+  { label:'GAGNÉ', win:true,  fill:'#d6dde8', textFill:'#003781', stroke:'#003781' },
+  { label:'GAGNÉ', win:true,  fill:'#003781', textFill:'#ffffff', stroke:'#ffffff' },
+  { label:'PERDU', win:false, fill:'#d6dde8', textFill:'#003781', stroke:'#003781' },
+];
+
+const N = SEGS.length;
+const ARC = 360 / N;
+const cx = 100, cy = 100, R = 96;
+
+function polarToXY(angleDeg, r) {
+  const a = (angleDeg - 90) * Math.PI / 180;
+  return [cx + r * Math.cos(a), cy + r * Math.sin(a)];
+}
+
+function segPath(i) {
+  const start = i * ARC, end = start + ARC;
+  const [x1,y1] = polarToXY(start, R);
+  const [x2,y2] = polarToXY(end,   R);
+  return `M${cx},${cy} L${x1},${y1} A${R},${R} 0 0,1 ${x2},${y2} Z`;
+}
+
+const svg = document.getElementById('wheel-svg');
+
+// Background circle
+const bg = document.createElementNS('http://www.w3.org/2000/svg','circle');
+bg.setAttribute('cx',cx); bg.setAttribute('cy',cy); bg.setAttribute('r',R);
+bg.setAttribute('fill','#003781');
+svg.appendChild(bg);
+
+SEGS.forEach((s, i) => {
+  // Wedge
+  const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+  path.setAttribute('d', segPath(i));
+  path.setAttribute('fill', s.fill);
+  path.setAttribute('stroke', '#003781');
+  path.setAttribute('stroke-width', '1.5');
+  svg.appendChild(path);
+
+  // Thin accent line near rim
+  const midAngle = i * ARC + ARC / 2;
+  const as = i * ARC + 2, ae = i * ARC + ARC - 2;
+  const [ax1,ay1] = polarToXY(as, R - 9);
+  const [ax2,ay2] = polarToXY(ae, R - 9);
+  const arcEl = document.createElementNS('http://www.w3.org/2000/svg','path');
+  arcEl.setAttribute('d', `M${ax1},${ay1} A${R-9},${R-9} 0 0,1 ${ax2},${ay2}`);
+  arcEl.setAttribute('fill','none');
+  arcEl.setAttribute('stroke', s.stroke);
+  arcEl.setAttribute('stroke-width','2');
+  arcEl.setAttribute('stroke-linecap','round');
+  arcEl.setAttribute('opacity','0.5');
+  svg.appendChild(arcEl);
+
+  // Label
+  const [tx,ty] = polarToXY(midAngle, R * 0.63);
+  const text = document.createElementNS('http://www.w3.org/2000/svg','text');
+  text.setAttribute('x', tx); text.setAttribute('y', ty);
+  text.setAttribute('text-anchor','middle');
+  text.setAttribute('dominant-baseline','middle');
+  text.setAttribute('transform', `rotate(${midAngle}, ${tx}, ${ty})`);
+  text.setAttribute('fill', s.textFill);
+  text.setAttribute('font-family', "'Source Sans 3', sans-serif");
+  text.setAttribute('font-size', '9.5');
+  text.setAttribute('font-weight', '700');
+  text.setAttribute('letter-spacing', '1.2');
+  text.textContent = s.label;
+  svg.appendChild(text);
+});
+
+// Outer ring
+const ring = document.createElementNS('http://www.w3.org/2000/svg','circle');
+ring.setAttribute('cx',cx); ring.setAttribute('cy',cy); ring.setAttribute('r',R);
+ring.setAttribute('fill','none');
+ring.setAttribute('stroke','#003781');
+ring.setAttribute('stroke-width','3');
+svg.appendChild(ring);
+
+// Inner ring decoration
+const ring2 = document.createElementNS('http://www.w3.org/2000/svg','circle');
+ring2.setAttribute('cx',cx); ring2.setAttribute('cy',cy); ring2.setAttribute('r', R - 12);
+ring2.setAttribute('fill','none');
+ring2.setAttribute('stroke','rgba(255,255,255,0.15)');
+ring2.setAttribute('stroke-width','1');
+svg.appendChild(ring2);
+
+// ── Spin logic ──
+let currentDeg = 0, spinning = false, wins = 0, losses = 0;
+function easeOut(t) { return 1 - Math.pow(1 - t, 4); }
+
+function getSegAtTop(deg) {
+  const n = ((-deg % 360) + 360) % 360;
+  return Math.floor(n / ARC) % N;
+}
+
+function showResult(idx) {
+  const seg = SEGS[idx];
+  const box = document.getElementById('result');
+  const ico = document.getElementById('ico');
+  const msg = document.getElementById('msg');
+  box.classList.remove('show','win','lose');
+  setTimeout(() => {
+    if (seg.win) {
+      ico.textContent = '✅'; msg.textContent = 'Bravo, vous avez gagné !';
+      box.classList.add('show','win'); wins++;
+    } else {
+      ico.textContent = '❌'; msg.textContent = 'Perdu — retentez votre chance.';
+      box.classList.add('show','lose'); losses++;
+    }
+    document.getElementById('wins').textContent   = wins;
+    document.getElementById('losses').textContent = losses;
+  }, 80);
+}
+
+function spin() {
+  if (spinning) return;
+  spinning = true;
+  document.getElementById('spinBtn').disabled = true;
+  document.getElementById('result').classList.remove('show','win','lose');
+
+  const total    = (5 + Math.random() * 3) * 360 + Math.random() * 360;
+  const duration = 3400 + Math.random() * 900;
+  const start    = performance.now();
+  const startDeg = currentDeg;
+
+  function frame(now) {
+    const p = Math.min((now - start) / duration, 1);
+    currentDeg = startDeg + total * easeOut(p);
+    document.getElementById('wheel-svg').style.transform = `rotate(${currentDeg}deg)`;
+    if (p < 1) { requestAnimationFrame(frame); }
+    else {
+      spinning = false;
+      document.getElementById('spinBtn').disabled = false;
+      showResult(getSegAtTop(currentDeg));
+    }
+  }
+  requestAnimationFrame(frame);
+}
+
+document.getElementById('spinBtn').addEventListener('click', spin);
+document.getElementById('hub').addEventListener('click', spin);
+</script>
+</body>
+</html>
